@@ -1,0 +1,22 @@
+interface StatusDotProps {
+  color: string;
+  animate?: boolean;
+  size?: number;
+}
+
+export function StatusDot({ color, animate = false, size = 11 }: StatusDotProps) {
+  return (
+    <span className="absolute bottom-0 right-0">
+      {animate && (
+        <span
+          className="absolute inset-0 rounded-full animate-ping-slow"
+          style={{ background: color }}
+        />
+      )}
+      <span
+        className="relative block rounded-full border-2 border-[var(--t-bg-card)]"
+        style={{ width: size, height: size, background: color }}
+      />
+    </span>
+  );
+}
