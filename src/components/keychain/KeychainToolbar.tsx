@@ -38,7 +38,6 @@ export function KeychainToolbar({
 }: KeychainToolbarProps) {
   const { compact, rowRef, leftRef, rightRef } = useToolbarResize();
   const { createRipple: rippleKey, rippleEls: ripplesKey } = useRipple();
-  const { createRipple: rippleIdentity, rippleEls: ripplesIdentity } = useRipple();
 
   return (
     <>
@@ -59,43 +58,23 @@ export function KeychainToolbar({
           />
         </div>
 
-        <div ref={rightRef} className="ml-auto flex items-center gap-2 shrink-0">
+        <div ref={rightRef} className="ml-auto flex items-center gap-px shrink-0">
           <button
-            onClick={onNewIdentity}
-            onMouseDown={rippleIdentity}
-            disabled={!onNewIdentity}
-            title={compact ? "New Identity" : undefined}
-            className="flex items-center gap-2 px-3 h-8 rounded-lg text-sm font-bold tracking-wider transition-colors shrink-0 whitespace-nowrap bg-[var(--t-bg-input)] text-[var(--t-text-primary)] border border-[var(--t-border-hover)] relative overflow-hidden"
-            style={{ opacity: !onNewIdentity ? 0.35 : undefined, cursor: !onNewIdentity ? "default" : undefined }}
-            onMouseEnter={(e) => { if (onNewIdentity) e.currentTarget.style.background = "var(--t-bg-input-hover)"; }}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "var(--t-bg-input)")}
+            onClick={onImportKey}
+            onMouseDown={rippleKey}
+            disabled={!onImportKey}
+            title={compact ? "New Key" : undefined}
+            className="flex items-center gap-2 px-3 h-8 text-sm font-bold tracking-wider transition-colors shrink-0 whitespace-nowrap relative overflow-hidden rounded-tl-[0.533rem] rounded-bl-[0.533rem]"
+            style={{ background: "var(--t-accent)", color: "var(--t-bg-terminal)", opacity: !onImportKey ? 0.4 : 1, cursor: !onImportKey ? "default" : undefined }}
+            onMouseEnter={(e) => { if (onImportKey) e.currentTarget.style.background = "var(--t-accent-hover)"; }}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "var(--t-accent)")}
             type="button"
           >
-            {ripplesIdentity}
-            <Icon icon="lucide:user-plus" width={18} />
-            {!compact && "NEW IDENTITY"}
+            {ripplesKey}
+            <Icon icon="lucide:key-round" width={18} />
+            {!compact && "NEW KEY"}
           </button>
-
-          <div className="w-px h-5 self-center bg-[var(--t-border-hover)]" />
-
-          <div className="flex items-center gap-px">
-            <button
-              onClick={onImportKey}
-              onMouseDown={rippleKey}
-              disabled={!onImportKey}
-              title={compact ? "New Key" : undefined}
-              className="flex items-center gap-2 px-3 h-8 text-sm font-bold tracking-wider transition-colors shrink-0 whitespace-nowrap relative overflow-hidden rounded-tl-[0.533rem] rounded-bl-[0.533rem]"
-              style={{ background: "var(--t-accent)", color: "var(--t-bg-terminal)", opacity: !onImportKey ? 0.4 : 1, cursor: !onImportKey ? "default" : undefined }}
-              onMouseEnter={(e) => { if (onImportKey) e.currentTarget.style.background = "var(--t-accent-hover)"; }}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "var(--t-accent)")}
-              type="button"
-            >
-              {ripplesKey}
-              <Icon icon="lucide:key-round" width={18} />
-              {!compact && "NEW KEY"}
-            </button>
-            <NewKeyChevron onImport={onImportKey} onGenerate={onGenerateKey} onNewFolder={onNewFolder} accent />
-          </div>
+          <NewKeyChevron onImport={onImportKey} onGenerate={onGenerateKey} onNewIdentity={onNewIdentity} onNewFolder={onNewFolder} accent />
         </div>
       </div>
     </>
@@ -106,7 +85,7 @@ export function KeychainToolbar({
 // Split chevron for "NEW KEY" button
 // ─────────────────────────────────────────────────────────────────
 
-function NewKeyChevron({ onGenerate, onNewFolder, accent }: { onImport?: () => void; onGenerate?: () => void; onNewFolder: () => void; accent?: boolean }) {
+function NewKeyChevron({ onGenerate, onNewIdentity, onNewFolder, accent }: { onImport?: () => void; onGenerate?: () => void; onNewIdentity?: () => void; onNewFolder: () => void; accent?: boolean }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -158,6 +137,7 @@ function NewKeyChevron({ onGenerate, onNewFolder, accent }: { onImport?: () => v
           }}
         >
           {onGenerate && <DropdownMenuItem icon="lucide:key-round" label="Generate Key Pair" onClick={() => { setOpen(false); onGenerate(); }} />}
+          {onNewIdentity && <DropdownMenuItem icon="lucide:user-plus" label="New Identity" onClick={() => { setOpen(false); onNewIdentity(); }} />}
           <DropdownMenuItem icon="lucide:folder-plus" label="New Folder" onClick={() => { setOpen(false); onNewFolder(); }} />
         </div>
       )}

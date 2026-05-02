@@ -98,7 +98,7 @@ export function ToolbarDropdown<T extends string>({
           type="button"
           onClick={onAction}
           disabled={disabled}
-          className="flex items-center gap-2 px-3 h-8 text-sm font-bold tracking-wider transition-colors shrink-0 whitespace-nowrap relative overflow-hidden border border-r-0 rounded-tl-[0.533rem] rounded-bl-[0.533rem]"
+          className={`flex items-center gap-2 px-3 h-8 text-sm font-bold tracking-wider transition-colors shrink-0 whitespace-nowrap relative overflow-hidden border ${hasContent ? "border-r-0 rounded-tl-[0.533rem] rounded-bl-[0.533rem]" : "rounded-[0.533rem]"}`}
           style={{
             background: actionBg, color: actionText, borderColor: actionBorder,
             opacity: disabled ? 0.4 : 1, cursor: disabled ? "not-allowed" : "pointer",
@@ -109,7 +109,7 @@ export function ToolbarDropdown<T extends string>({
           <Icon icon={icon} width={20} />
           {label}
         </button>
-        <button
+        {hasContent && <button
           type="button"
           onClick={() => setOpen((o) => !o)}
           className="flex items-center justify-center w-8 h-8 transition-colors relative overflow-hidden border rounded-tr-[0.533rem] rounded-br-[0.533rem]"
@@ -121,7 +121,7 @@ export function ToolbarDropdown<T extends string>({
           <span className="[&_path]:[stroke-width:3]">
             <Icon icon="lucide:chevron-down" width={20} />
           </span>
-        </button>
+        </button>}
         {menuEl}
       </div>
     );
