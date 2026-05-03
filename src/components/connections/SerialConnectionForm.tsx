@@ -19,6 +19,7 @@ import {
   formLabelStyle,
 } from "@/components/shared/Panel";
 import { Pills } from "@/components/shared/Pills";
+import { FormSelect } from "@/components/shared/FormSelect";
 import EncodingSelector from "./EncodingSelector";
 import type { ConnectionFormHandle } from "./ConnectionForm";
 
@@ -292,16 +293,12 @@ const SerialConnectionForm = forwardRef<ConnectionFormHandle, Props>(function Se
               <label className={formLabelClass} style={formLabelStyle}>Baud Rate</label>
               {!useCustomBaud ? (
                 <div className="flex gap-2">
-                  <select
-                    className={`${formInputClass} flex-1`}
-                    style={{ ...formInputStyle, cursor: "pointer" }}
-                    value={baud}
-                    onChange={(e) => { markDirty(); setBaud(Number(e.target.value)); }}
-                  >
-                    {BAUD_RATES.map((r) => (
-                      <option key={r} value={r}>{r.toLocaleString()}</option>
-                    ))}
-                  </select>
+                  <FormSelect
+                    className="flex-1"
+                    value={String(baud)}
+                    options={BAUD_RATES.map((r) => ({ value: String(r), label: r.toLocaleString() }))}
+                    onChange={(v) => { markDirty(); setBaud(Number(v)); }}
+                  />
                   <button
                     type="button"
                     className="text-xs text-[var(--t-text-dim)] hover:text-[var(--t-text-primary)] px-2 transition-colors whitespace-nowrap"

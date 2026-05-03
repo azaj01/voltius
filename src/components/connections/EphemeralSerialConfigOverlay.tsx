@@ -3,6 +3,7 @@ import { Icon } from "@iconify/react";
 import type { SerialConnectParams } from "@/types";
 import { serialListPorts } from "@/services/serial";
 import { Pills } from "@/components/shared/Pills";
+import { FormSelect } from "@/components/shared/FormSelect";
 
 const BAUD_RATE_PRESETS = [300, 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200, 230400, 460800, 921600];
 
@@ -62,11 +63,11 @@ export function EphemeralSerialConfigOverlay({
           </div>
           <div>
             <label className="text-xs text-[var(--t-text-dim)] mb-1 block">Baud Rate</label>
-            <select className={sel} value={baud} onChange={(e) => setBaud(Number(e.target.value))}>
-              {BAUD_RATE_PRESETS.map((r) => (
-                <option key={r} value={r}>{r.toLocaleString()}</option>
-              ))}
-            </select>
+            <FormSelect
+              value={String(baud)}
+              options={BAUD_RATE_PRESETS.map((r) => ({ value: String(r), label: r.toLocaleString() }))}
+              onChange={(v) => setBaud(Number(v))}
+            />
           </div>
           <button
             type="button"
