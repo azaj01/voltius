@@ -129,7 +129,7 @@ function csvEscape(v: string): string {
 export function connectionsToCSV(connections: ConnectionExport[]): string {
   const rows: string[][] = [CSV_HEADERS];
   for (const c of connections) {
-    rows.push([c.name ?? "", c.host, String(c.port), c.username, c.auth_type, c.tags.join(";")]);
+    rows.push([c.name ?? "", c.host ?? "", String(c.port ?? 0), c.username ?? "", c.auth_type ?? "", c.tags.join(";")]);
   }
   return rows.map((r) => r.map(csvEscape).join(",")).join("\n");
 }

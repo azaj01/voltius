@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Icon } from "@iconify/react";
 import { useRipple } from "@/hooks/useRipple";
 import { generateSshKeypair } from "@/services/keys";
@@ -7,82 +7,7 @@ import {
   formInputClass, formInputStyle, formLabelClass, formLabelStyle,
 } from "@/components/shared/Panel";
 import { InfoTooltip } from "@/components/shared/InfoTooltip";
-
-// ─────────────────────────────────────────────────────────────────
-// Pills component with sliding indicator
-// ─────────────────────────────────────────────────────────────────
-
-interface PillOption<T extends string> {
-  value: T;
-  label: string;
-  disabled?: boolean;
-}
-
-export function Pills<T extends string>({
-  options,
-  value,
-  onChange,
-}: {
-  options: PillOption<T>[];
-  value: T;
-  onChange: (v: T) => void;
-}) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [indicatorStyle, setIndicatorStyle] = useState<React.CSSProperties>({});
-
-  useLayoutEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-    const idx = options.findIndex((o) => o.value === value);
-    const buttons = container.querySelectorAll<HTMLElement>("button");
-    const btn = buttons[idx];
-    if (!btn) return;
-    setIndicatorStyle({
-      left: btn.offsetLeft,
-      width: btn.offsetWidth,
-      top: btn.offsetTop,
-      height: btn.offsetHeight,
-    });
-  }, [value, options]);
-
-  return (
-    <div
-      ref={containerRef}
-      className="relative flex gap-0.5 p-0.5 rounded-lg bg-[var(--t-bg-base)] border border-[var(--t-border)]"
-    >
-      <div
-        className="absolute rounded-md pointer-events-none"
-        style={{
-          ...indicatorStyle,
-          background: "var(--t-accent)",
-          opacity: 0.15,
-          transition: "left 150ms ease, width 150ms ease",
-        }}
-
-      />
-      {options.map((opt) => (
-        <button
-          key={opt.value}
-          type="button"
-          disabled={opt.disabled}
-          onClick={() => !opt.disabled && onChange(opt.value)}
-          className="relative z-10 flex-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors"
-          style={{
-            color: value === opt.value
-              ? "var(--t-accent)"
-              : opt.disabled
-                ? "var(--t-text-dim)"
-                : "var(--t-text-secondary)",
-            cursor: opt.disabled ? "not-allowed" : "pointer",
-            opacity: opt.disabled ? 0.4 : 1,
-          }}
-        >
-          {opt.label}
-        </button>
-      ))}
-    </div>
-  );
-}
+import { Pills, type PillOption } from "@/components/shared/Pills";
 
 // ─────────────────────────────────────────────────────────────────
 // KeyGenForm (side panel)

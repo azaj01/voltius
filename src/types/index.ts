@@ -104,6 +104,13 @@ export interface Connection {
   terminal_encoding?: string;
   pinned?: boolean;
   ping_disabled?: boolean;
+  connection_type?: "ssh" | "serial";
+  serial_port?: string;
+  serial_baud?: number;
+  serial_data_bits?: number;
+  serial_parity?: string;
+  serial_stop_bits?: number;
+  serial_flow_control?: string;
   updated_at: string;
   deleted_at?: string;
   clocks: Record<string, string>;
@@ -111,10 +118,10 @@ export interface Connection {
 
 export interface ConnectionFormData {
   name?: string;
-  host: string;
-  port: number;
-  username: string;
-  auth_type: AuthType;
+  host?: string;
+  port?: number;
+  username?: string;
+  auth_type?: AuthType;
   tags: string[];
   identity_id?: string;
   folder_id?: string;
@@ -127,6 +134,13 @@ export interface ConnectionFormData {
   terminal_encoding?: string;
   pinned?: boolean;
   ping_disabled?: boolean;
+  connection_type?: "ssh" | "serial";
+  serial_port?: string;
+  serial_baud?: number;
+  serial_data_bits?: number;
+  serial_parity?: string;
+  serial_stop_bits?: number;
+  serial_flow_control?: string;
 }
 
 export interface KnownHost {
@@ -142,14 +156,25 @@ export interface KnownHost {
   clocks: Record<string, string>;
 }
 
+export interface SerialConnectParams {
+  sessionId: string;
+  port: string;
+  baud: number;
+  dataBits?: number;
+  parity?: string;
+  stopBits?: number;
+  flowControl?: string;
+}
+
 export interface TerminalSession {
   id: string;
   connectionId: string;
   connectionName: string;
   status: "connecting" | "connected" | "disconnected" | "error";
-  type: "ssh" | "local" | "multiplayer";
+  type: "ssh" | "local" | "multiplayer" | "serial";
   errorMessage?: string;
   encoding?: string;
+  serialConfig?: SerialConnectParams;
 }
 
 /** A vault option for context menu move/copy actions. id is the stored team ID or "personal". */

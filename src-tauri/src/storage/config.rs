@@ -5,6 +5,7 @@ use std::path::PathBuf;
 
 fn default_folder_object_type() -> String { "connection".to_string() }
 fn default_personal() -> String { "personal".to_string() }
+fn default_ssh() -> String { "ssh".to_string() }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JumpHost {
@@ -58,9 +59,13 @@ pub struct Connection {
     pub id: String,
     #[serde(default)]
     pub name: Option<String>,
+    #[serde(default)]
     pub host: String,
+    #[serde(default)]
     pub port: u16,
+    #[serde(default)]
     pub username: String,
+    #[serde(default)]
     pub auth_type: String,
     pub tags: Vec<String>,
     pub created_at: String,
@@ -89,6 +94,20 @@ pub struct Connection {
     pub pinned: bool,
     #[serde(default)]
     pub ping_disabled: bool,
+    #[serde(default = "default_ssh")]
+    pub connection_type: String,
+    #[serde(default)]
+    pub serial_port: Option<String>,
+    #[serde(default)]
+    pub serial_baud: Option<u32>,
+    #[serde(default)]
+    pub serial_data_bits: Option<u8>,
+    #[serde(default)]
+    pub serial_parity: Option<String>,
+    #[serde(default)]
+    pub serial_stop_bits: Option<u8>,
+    #[serde(default)]
+    pub serial_flow_control: Option<String>,
     pub updated_at: String,
     pub deleted_at: Option<String>,
     pub clocks: HashMap<String, String>,
@@ -98,10 +117,15 @@ pub struct Connection {
 pub struct ConnectionFormData {
     #[serde(default)]
     pub name: Option<String>,
+    #[serde(default)]
     pub host: String,
+    #[serde(default)]
     pub port: u16,
+    #[serde(default)]
     pub username: String,
+    #[serde(default)]
     pub auth_type: String,
+    #[serde(default)]
     pub tags: Vec<String>,
     #[serde(default)]
     pub identity_id: Option<String>,
@@ -126,6 +150,20 @@ pub struct ConnectionFormData {
     pub pinned: bool,
     #[serde(default)]
     pub ping_disabled: bool,
+    #[serde(default = "default_ssh")]
+    pub connection_type: String,
+    #[serde(default)]
+    pub serial_port: Option<String>,
+    #[serde(default)]
+    pub serial_baud: Option<u32>,
+    #[serde(default)]
+    pub serial_data_bits: Option<u8>,
+    #[serde(default)]
+    pub serial_parity: Option<String>,
+    #[serde(default)]
+    pub serial_stop_bits: Option<u8>,
+    #[serde(default)]
+    pub serial_flow_control: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -44,6 +44,13 @@ pub fn connection_save(data: ConnectionFormData) -> Result<Connection, String> {
     clocks.insert("pre_command".to_string(), now.clone());
     clocks.insert("post_command".to_string(), now.clone());
     clocks.insert("terminal_encoding".to_string(), now.clone());
+    clocks.insert("connection_type".to_string(), now.clone());
+    clocks.insert("serial_port".to_string(), now.clone());
+    clocks.insert("serial_baud".to_string(), now.clone());
+    clocks.insert("serial_data_bits".to_string(), now.clone());
+    clocks.insert("serial_parity".to_string(), now.clone());
+    clocks.insert("serial_stop_bits".to_string(), now.clone());
+    clocks.insert("serial_flow_control".to_string(), now.clone());
     let vault_id = data.vault_id.unwrap_or_else(|| "personal".to_string());
     check_vault_write(&[vault_id.clone()])?;
     let conn = Connection {
@@ -70,6 +77,13 @@ pub fn connection_save(data: ConnectionFormData) -> Result<Connection, String> {
         deleted_at: None,
         pinned: data.pinned,
         ping_disabled: data.ping_disabled,
+        connection_type: data.connection_type,
+        serial_port: data.serial_port,
+        serial_baud: data.serial_baud,
+        serial_data_bits: data.serial_data_bits,
+        serial_parity: data.serial_parity,
+        serial_stop_bits: data.serial_stop_bits,
+        serial_flow_control: data.serial_flow_control,
         clocks,
     };
     connections.push(conn.clone());
@@ -109,6 +123,13 @@ pub fn connection_update(id: String, data: ConnectionFormData) -> Result<Connect
     if conn.post_command != data.post_command { conn.clocks.insert("post_command".to_string(), now.clone()); }
     if conn.terminal_encoding != data.terminal_encoding { conn.clocks.insert("terminal_encoding".to_string(), now.clone()); }
     if conn.ping_disabled != data.ping_disabled { conn.clocks.insert("ping_disabled".to_string(), now.clone()); }
+    if conn.connection_type != data.connection_type { conn.clocks.insert("connection_type".to_string(), now.clone()); }
+    if conn.serial_port != data.serial_port { conn.clocks.insert("serial_port".to_string(), now.clone()); }
+    if conn.serial_baud != data.serial_baud { conn.clocks.insert("serial_baud".to_string(), now.clone()); }
+    if conn.serial_data_bits != data.serial_data_bits { conn.clocks.insert("serial_data_bits".to_string(), now.clone()); }
+    if conn.serial_parity != data.serial_parity { conn.clocks.insert("serial_parity".to_string(), now.clone()); }
+    if conn.serial_stop_bits != data.serial_stop_bits { conn.clocks.insert("serial_stop_bits".to_string(), now.clone()); }
+    if conn.serial_flow_control != data.serial_flow_control { conn.clocks.insert("serial_flow_control".to_string(), now.clone()); }
 
     // Effective vault: use new one if provided, otherwise keep existing
     let effective_vault = data.vault_id.as_deref().unwrap_or(&conn.vault_id).to_string();
@@ -133,6 +154,13 @@ pub fn connection_update(id: String, data: ConnectionFormData) -> Result<Connect
     conn.terminal_encoding = data.terminal_encoding;
     conn.pinned = data.pinned;
     conn.ping_disabled = data.ping_disabled;
+    conn.connection_type = data.connection_type;
+    conn.serial_port = data.serial_port;
+    conn.serial_baud = data.serial_baud;
+    conn.serial_data_bits = data.serial_data_bits;
+    conn.serial_parity = data.serial_parity;
+    conn.serial_stop_bits = data.serial_stop_bits;
+    conn.serial_flow_control = data.serial_flow_control;
     if let Some(vid) = data.vault_id { conn.vault_id = vid; }
     conn.deleted_at = None; // revive if somehow updating a tombstone
     conn.updated_at = max_clock(&conn.clocks, &now);

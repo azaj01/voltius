@@ -11,10 +11,11 @@ import TerminalView from "@/components/terminal/Terminal";
 import MultiplayerTerminalView from "@/components/terminal/MultiplayerTerminalView";
 import { MultiplayerBar } from "@/components/terminal/MultiplayerBar";
 import { useMultiplayerHostBroadcast } from "@/hooks/useMultiplayerHostBroadcast";
-import ConnectionOverlay, { SSH_STEPS } from "@/components/terminal/ConnectionOverlay";
+import ConnectionOverlay, { SSH_STEPS, SERIAL_STEPS } from "@/components/terminal/ConnectionOverlay";
 import { useConnectionStore } from "@/stores/connectionStore";
 import { getDistroIcon } from "@/utils/icons";
 import type { TerminalSession } from "@/types";
+import { EphemeralSerialConfigOverlay } from "@/components/connections/EphemeralSerialConfigOverlay";
 import HomePage from "@/components/home/HomePage";
 import HostsPage from "@/components/hosts/HostsPage";
 import KeychainPage from "@/components/keychain/KeychainPage";
@@ -158,12 +159,15 @@ function HostAwareTerminalView({
     return mpState.controlHolder === "" || mpState.controlHolder === mpState.myUserId;
   };
 
+  // Map serial to local for terminal rendering (both use raw byte I/O from xterm)
+  const terminalType = session.type === "serial" ? "serial" : (session.type as "ssh" | "local");
+
   return (
     <div className="absolute inset-0 flex flex-col">
       <div className="flex-1 relative overflow-hidden">
         <TerminalView
           sessionId={session.id}
-          sessionType={session.type as "ssh" | "local"}
+          sessionType={terminalType as "ssh" | "local" | "serial"}
           active={active}
           onClosed={onClosed}
           inputGate={inputGateRef}
@@ -183,6 +187,42 @@ function SessionConnectionOverlay({
   onRetry?: () => void;
 }) {
   const connection = useConnectionStore((s) => s.connections.find((c) => c.id === session.connectionId));
+  const connectSerialEphemeralFinalize = useSessionStore((s) => s.connectSerialEphemeralFinalize);
+  const resetSerialEphemeral = useSessionStore((s) => s.resetSerialEphemeral);
+
+  if (session.type === "serial") {
+    const isEphemeral = session.connectionId === "serial-ephemeral";
+
+    if (isEphemeral && !session.serialConfig) {
+      return (
+        <EphemeralSerialConfigOverlay
+          sessionId={session.id}
+          onConnect={(params) => void connectSerialEphemeralFinalize(session.id, params)}
+          onDismiss={onDismiss}
+        />
+      );
+    }
+
+    const subtitle = session.serialConfig
+      ? `${session.serialConfig.port} · ${session.serialConfig.baud} baud`
+      : undefined;
+    return (
+      <ConnectionOverlay
+        sessionId={session.id}
+        status={session.status}
+        errorMessage={session.errorMessage}
+        name={session.connectionName}
+        subtitle={subtitle}
+        icon="lucide:ethernet-port"
+        steps={SERIAL_STEPS}
+        stepEventName={`serial-step-${session.id}`}
+        conflictEventName=""
+        onDismiss={onDismiss}
+        onRetry={isEphemeral ? () => resetSerialEphemeral(session.id) : onRetry}
+      />
+    );
+  }
+
   const icon = connection?.distro ? (getDistroIcon(connection.distro) ?? "lucide:monitor") : "lucide:monitor";
   const subtitle = connection ? `${connection.username}@${connection.host}:${connection.port}` : undefined;
   return (
@@ -299,7 +339,7 @@ export default function MainPanel() {
                     <SessionConnectionOverlay
                       session={session}
                       onDismiss={() => removeSession(session.id)}
-                      onRetry={session.type === "ssh" ? () => reconnect(session.id) : undefined}
+                      onRetry={(session.type === "ssh" || session.type === "serial") ? () => reconnect(session.id) : undefined}
                     />
                   )}
                   {session.type === "multiplayer" ? (
@@ -315,7 +355,7 @@ export default function MainPanel() {
                       session={session}
                       active={session.id === activeSessionId && session.status === "connected" && !overlayContent}
                       onClosed={() => {
-                        if (session.type === "ssh") {
+                        if (session.type === "ssh" || session.type === "serial") {
                           setTimeout(() => reconnect(session.id), 1500);
                         } else {
                           markDisconnected(session.id);

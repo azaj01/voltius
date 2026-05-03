@@ -18,6 +18,7 @@ interface HomeToolbarProps {
   onSearchChange: (value: string) => void;
   onCreateHost: () => void;
   onCreateFolder: () => void;
+  onCreateSerial?: () => void;
   canCreate?: boolean;
   canCreateFolder?: boolean;
   onOpenLocalTerminal: () => void;
@@ -40,6 +41,7 @@ export function HomeToolbar({
   onSearchChange,
   onCreateHost,
   onCreateFolder,
+  onCreateSerial,
   onOpenLocalTerminal,
   onOpenSerial,
   onOpenImportExport,
@@ -61,6 +63,7 @@ export function HomeToolbar({
   const pluginHostMenuItems = useUIContributions("home.toolbar.hostMenu");
 
   const newHostItems = [
+    ...(canCreate && onCreateSerial ? [{ label: "New Serial Host", icon: "lucide:ethernet-port", onClick: onCreateSerial }] : []),
     ...(canCreateFolder ? [{ label: "New Folder", icon: "lucide:folder-plus", onClick: onCreateFolder }] : []),
     ...pluginHostMenuItems,
   ];

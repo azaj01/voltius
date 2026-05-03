@@ -58,6 +58,11 @@ export const SFTP_STEPS: StepConfig[] = [
   { id: "sftp_subsystem", label: "SFTP subsystem" },
 ];
 
+export const SERIAL_STEPS: StepConfig[] = [
+  { id: "open_port", label: "Opening port" },
+  { id: "ready",     label: "Ready" },
+];
+
 export default function ConnectionOverlay({
   sessionId, status, errorMessage,
   name, subtitle, icon,
@@ -95,6 +100,7 @@ export default function ConnectionOverlay({
   }, [stepEventName]);
 
   useEffect(() => {
+    if (!conflictEventName) return;
     const unlisten = listen<HostKeyConflictEvent>(conflictEventName, (e) =>
       setConflict(e.payload),
     );

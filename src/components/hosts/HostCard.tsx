@@ -33,8 +33,11 @@ interface Props {
   onDragEnd?: (e: React.DragEvent<HTMLDivElement>) => void;
 }
 
-function displayName(c: { name?: string; username: string; host: string; port: number }) {
-  return c.name?.trim() || `${c.username}@${c.host}:${c.port}`;
+function displayName(c: { name?: string; username?: string; host?: string; port?: number; connection_type?: string; serial_port?: string }) {
+  if (c.connection_type === "serial") {
+    return c.name?.trim() || c.serial_port || "Serial Device";
+  }
+  return c.name?.trim() || `${c.username ?? ""}@${c.host ?? ""}:${c.port ?? ""}`;
 }
 
 export default function HostCard({
@@ -45,6 +48,7 @@ export default function HostCard({
   bulkContextMenuItems, onDragStart, onDragEnd,
 }: Props) {
   const isList = layout === "list";
+  const isSerial = connection.connection_type === "serial";
   const contributions = useUIContributions("connection.contextMenu", connection);
   const isSynced = useSyncPrefsStore((s) => s.isObjectSynced(connection.id, "connection"));
   const pinConnection = useConnectionStore((s) => s.pinConnection);
@@ -52,7 +56,7 @@ export default function HostCard({
   const pingEnabled = useHostPingStore((s) => s.enabled);
   const pingStatus = useHostPingStore((s) => s.statuses[connection.id]);
   const pingLatency = useHostPingStore((s) => s.latencies[connection.id]);
-  const showPingDot = pingEnabled && !connection.ping_disabled;
+  const showPingDot = !isSerial && pingEnabled && !connection.ping_disabled;
 
   const contextMenuItems: ContextMenuItem[] = [
     ...(canEdit ? [{ label: "Edit", icon: "lucide:pencil", onClick: () => onEdit(connection), shortcut: "E" }] : []),
@@ -99,7 +103,16 @@ export default function HostCard({
       contextMenuItems={contextMenuItems}
     >
       <div className="relative shrink-0">
-        <ConnectionAvatar connection={connection} size={isList ? 28 : 48} />
+        {isSerial ? (
+          <div
+            className="rounded-lg flex items-center justify-center bg-[var(--t-bg-card-avatar)]"
+            style={{ width: isList ? 28 : 48, height: isList ? 28 : 48 }}
+          >
+            <Icon icon="lucide:ethernet-port" width={isList ? 14 : 22} />
+          </div>
+        ) : (
+          <ConnectionAvatar connection={connection} size={isList ? 28 : 48} />
+        )}
         {showPingDot && (
           <StatusDot
             color={
@@ -120,7 +133,10 @@ export default function HostCard({
             {displayName(connection)}
           </p>
           <p className="text-xs truncate flex-1 text-[var(--t-text-secondary)]">
-            {connection.username}@{connection.host}:{connection.port}{showPingDot && pingStatus === "up" && pingLatency !== undefined && ` · ${pingLatency}ms`}
+            {isSerial
+              ? `serial · ${connection.serial_baud ?? 115200} baud`
+              : `${connection.username}@${connection.host}:${connection.port}${showPingDot && pingStatus === "up" && pingLatency !== undefined ? ` · ${pingLatency}ms` : ""}`
+            }
           </p>
           {connection.tags.length > 0 && (
             <div className="flex items-center gap-1 shrink-0">
@@ -141,7 +157,10 @@ export default function HostCard({
             {displayName(connection)}
           </p>
           <p className="text-xs mt-0.5 truncate text-[var(--t-text-secondary)]">
-            ssh, {connection.username}{showPingDot && pingStatus === "up" && pingLatency !== undefined && ` · ${pingLatency}ms`}
+            {isSerial
+              ? `serial · ${connection.serial_baud ?? 115200} baud`
+              : `ssh, ${connection.username}${showPingDot && pingStatus === "up" && pingLatency !== undefined ? ` · ${pingLatency}ms` : ""}`
+            }
           </p>
         </div>
       )}

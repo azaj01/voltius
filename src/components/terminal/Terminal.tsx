@@ -5,7 +5,7 @@ import "@xterm/xterm/css/xterm.css";
 
 interface Props {
   sessionId: string;
-  sessionType: "ssh" | "local";
+  sessionType: "ssh" | "local" | "serial";
   onClosed?: () => void;
   active?: boolean;
   inputGate?: React.RefObject<() => boolean>;

@@ -5,6 +5,7 @@ import { WebglAddon } from "@xterm/addon-webgl";
 import { WebLinksAddon } from "@xterm/addon-web-links";
 import { sshSendInput, sshResize, onSshOutput, onSshClosed } from "@/services/ssh";
 import { localSendInput, localResize, onLocalOutput, onLocalClosed } from "@/services/local";
+import { serialWrite, onSerialOutput, onSerialClosed } from "@/services/serial";
 import { useThemeStore } from "@/stores/themeStore";
 import { useUIStore } from "@/stores/uiStore";
 import { useSessionStore } from "@/stores/sessionStore";
@@ -12,7 +13,7 @@ import type { UnlistenFn } from "@tauri-apps/api/event";
 
 interface UseTerminalOptions {
   sessionId: string;
-  sessionType: "ssh" | "local";
+  sessionType: "ssh" | "local" | "serial";
   onClosed?: () => void;
   /** If provided, input is only sent to the process when this returns true. */
   inputGate?: React.RefObject<() => boolean>;
@@ -25,7 +26,7 @@ export function useTerminal({ sessionId, sessionType, onClosed, inputGate, encod
   const containerRef = useRef<HTMLDivElement | null>(null);
   const cleanupRef = useRef<(() => void) | null>(null);
   // Prevents resize/input calls from firing before the Tauri session exists.
-  const connectedRef = useRef(sessionType === "local");
+  const connectedRef = useRef(sessionType === "local" || sessionType === "serial");
 
   useEffect(() => {
     if (sessionType !== "ssh") return;
@@ -138,6 +139,8 @@ export function useTerminal({ sessionId, sessionType, onClosed, inputGate, encod
         if (!connectedRef.current) return;
         if (sessionType === "local") {
           localSendInput(sessionId, encoder.encode(data));
+        } else if (sessionType === "serial") {
+          serialWrite(sessionId, encoder.encode(data)).catch(() => {});
         } else {
           sshSendInput(sessionId, encoder.encode(data));
         }
@@ -156,6 +159,16 @@ export function useTerminal({ sessionId, sessionType, onClosed, inputGate, encod
             onClosed?.();
           }),
         );
+      } else if (sessionType === "serial") {
+        unlistenPromises.push(
+          onSerialOutput(sessionId, (data) => { term.write(decoder ? decoder.decode(data) : data); }),
+        );
+        unlistenPromises.push(
+          onSerialClosed(sessionId, () => {
+            term.write("\r\n\x1b[90m--- Serial connection closed ---\x1b[0m\r\n");
+            onClosed?.();
+          }),
+        );
       } else {
         unlistenPromises.push(
           onSshOutput(sessionId, (data) => { term.write(decoder ? decoder.decode(data) : data); }),
@@ -170,13 +183,15 @@ export function useTerminal({ sessionId, sessionType, onClosed, inputGate, encod
 
       // Handle resize — registered before initial fit so the first fit immediately
       // propagates correct dimensions to the backend PTY (fixes nano/vim size on SSH).
+      // Serial connections have no PTY so we skip resize.
       const onResizeDispose = term.onResize(({ cols, rows }) => {
         if (!connectedRef.current) return;
         if (sessionType === "local") {
           localResize(sessionId, cols, rows);
-        } else {
+        } else if (sessionType === "ssh") {
           sshResize(sessionId, cols, rows);
         }
+        // serial: no resize needed
       });
 
       fitAddon.fit();
@@ -273,9 +288,10 @@ export function useTerminal({ sessionId, sessionType, onClosed, inputGate, encod
     if (!connectedRef.current) return;
     if (sessionType === "local") {
       localResize(sessionId, term.cols, term.rows);
-    } else {
+    } else if (sessionType === "ssh") {
       sshResize(sessionId, term.cols, term.rows);
     }
+    // serial: no PTY resize
   }, [sessionId, sessionType]);
 
   return { attach, focus, fit };

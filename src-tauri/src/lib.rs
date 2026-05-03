@@ -5,6 +5,7 @@ mod metrics;
 mod known_hosts;
 mod local;
 mod port_forward;
+mod serial;
 mod sftp;
 mod ssh;
 mod storage;
@@ -14,6 +15,7 @@ use docker::stream::DockerLogStreamManager;
 use known_hosts::{KnownHostsStore, PendingConflicts};
 use metrics::stream::MetricsStreamManager;
 use port_forward::PortForwardManager;
+use serial::connect::SerialSessionManager;
 use std::sync::{Arc, Mutex};
 use local::session::LocalSessionManager;
 use sftp::SftpManager;
@@ -217,6 +219,7 @@ pub fn run() {
         .manage(LocalSessionManager::new())
         .manage(SecretsStore::new())
         .manage(SftpManager::new())
+        .manage(SerialSessionManager::new())
         .invoke_handler(tauri::generate_handler![
             force_quit,
             updater_restart,
@@ -380,6 +383,10 @@ pub fn run() {
             commands::docker::docker_prune_networks,
             commands::docker::docker_system_prune,
             commands::docker::docker_open_exec_session,
+            serial::connect::serial_list_ports,
+            serial::connect::serial_connect,
+            serial::connect::serial_write,
+            serial::connect::serial_disconnect,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1,7 +1,8 @@
 import { create } from "zustand";
-import type { Connection, TerminalSession } from "@/types";
+import type { Connection, TerminalSession, SerialConnectParams } from "@/types";
 import { sshConnect, sshDisconnect, sshDetectDistro, sshSendInput, type JumpHostConnect } from "@/services/ssh";
 import { localConnect, localDisconnect } from "@/services/local";
+import { serialConnect, serialDisconnect } from "@/services/serial";
 import { getSecret } from "@/services/vault";
 import { useConnectionStore } from "./connectionStore";
 import { useUIStore } from "./uiStore";
@@ -16,6 +17,10 @@ interface SessionStore {
   connectLocal: () => Promise<void>;
   connectLocalAt: (cwd: string) => Promise<void>;
   connectAt: (connectionId: string, cwd: string) => Promise<void>;
+  connectSerial: (connectionId: string) => Promise<void>;
+  connectSerialEphemeral: () => Promise<void>;
+  connectSerialEphemeralFinalize: (sessionId: string, params: SerialConnectParams) => Promise<void>;
+  resetSerialEphemeral: (sessionId: string) => void;
   disconnect: (sessionId: string) => Promise<void>;
   setActive: (sessionId: string) => void;
   markDisconnected: (sessionId: string) => void;
@@ -120,6 +125,12 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       Object.values(teamConnections).flat().find((c) => c.id === connectionId);
     if (!connection) throw new Error("Connection not found");
 
+    // Dispatch to serial connect if this is a serial connection
+    if (connection.connection_type === "serial") {
+      await get().connectSerial(connectionId);
+      return;
+    }
+
     const sessionId = crypto.randomUUID();
     let password: string | undefined;
     let privateKey: string | undefined;
@@ -223,10 +234,110 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
     useUIStore.getState().setSidebarOpen(false);
   },
 
+  connectSerial: async (connectionId) => {
+    const { connections, teamConnections } = useConnectionStore.getState();
+    const connection =
+      connections.find((c) => c.id === connectionId) ??
+      Object.values(teamConnections).flat().find((c) => c.id === connectionId);
+    if (!connection) throw new Error("Connection not found");
+
+    const sessionId = crypto.randomUUID();
+    const serialParams: SerialConnectParams = {
+      sessionId,
+      port: connection.serial_port ?? "",
+      baud: connection.serial_baud ?? 115200,
+      dataBits: connection.serial_data_bits,
+      parity: connection.serial_parity,
+      stopBits: connection.serial_stop_bits,
+      flowControl: connection.serial_flow_control,
+    };
+
+    const session: TerminalSession = {
+      id: sessionId,
+      connectionId: connection.id,
+      connectionName: connection.name?.trim() || connection.serial_port || "Serial",
+      status: "connecting",
+      type: "serial",
+      serialConfig: serialParams,
+    };
+
+    set((s) => ({ sessions: [...s.sessions, session], activeSessionId: sessionId }));
+    useUIStore.getState().setActiveNav("terminal" as any);
+    useUIStore.getState().setSidebarOpen(false);
+
+    try {
+      await serialConnect(serialParams);
+      set((s) => ({
+        sessions: s.sessions.map((sess) =>
+          sess.id === sessionId ? { ...sess, status: "connected" as const } : sess,
+        ),
+      }));
+      useConnectionStore.getState().setLastUsed(connection.id).catch(() => {});
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      set((s) => ({
+        sessions: s.sessions.map((sess) =>
+          sess.id === sessionId ? { ...sess, status: "error" as const, errorMessage: msg } : sess,
+        ),
+      }));
+    }
+  },
+
+  connectSerialEphemeral: async () => {
+    const sessionId = crypto.randomUUID();
+    const session: TerminalSession = {
+      id: sessionId,
+      connectionId: "serial-ephemeral",
+      connectionName: "Serial",
+      status: "connecting",
+      type: "serial",
+    };
+    set((s) => ({ sessions: [...s.sessions, session], activeSessionId: sessionId }));
+    useUIStore.getState().setActiveNav("terminal" as any);
+    useUIStore.getState().setSidebarOpen(false);
+  },
+
+  connectSerialEphemeralFinalize: async (sessionId, params) => {
+    set((s) => ({
+      sessions: s.sessions.map((sess) =>
+        sess.id === sessionId
+          ? { ...sess, serialConfig: params, status: "connecting" as const, errorMessage: undefined }
+          : sess,
+      ),
+    }) as any);
+    try {
+      await serialConnect(params);
+      set((s) => ({
+        sessions: s.sessions.map((sess) =>
+          sess.id === sessionId ? { ...sess, status: "connected" as const } : sess,
+        ),
+      }) as any);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      set((s) => ({
+        sessions: s.sessions.map((sess) =>
+          sess.id === sessionId ? { ...sess, status: "error" as const, errorMessage: msg } : sess,
+        ),
+      }) as any);
+    }
+  },
+
+  resetSerialEphemeral: (sessionId) => {
+    set((s) => ({
+      sessions: s.sessions.map((sess) =>
+        sess.id === sessionId
+          ? { ...sess, serialConfig: undefined, status: "connecting" as const, errorMessage: undefined }
+          : sess,
+      ),
+    }) as any);
+  },
+
   disconnect: async (sessionId) => {
     const session = get().sessions.find((s) => s.id === sessionId);
     if (session?.type === "local") {
       await localDisconnect(sessionId);
+    } else if (session?.type === "serial") {
+      await serialDisconnect(sessionId).catch(() => {});
     } else {
       const connection = session?.connectionId
         ? useConnectionStore.getState().connections.find((c) => c.id === session.connectionId)
@@ -255,7 +366,33 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
 
   reconnect: async (sessionId) => {
     const session = get().sessions.find((s) => s.id === sessionId);
-    if (!session || session.type !== "ssh") return;
+    if (!session || (session.type !== "ssh" && session.type !== "serial")) return;
+
+    // Handle serial reconnect
+    if (session.type === "serial" && session.serialConfig) {
+      set((s) => ({
+        sessions: s.sessions.map((sess) =>
+          sess.id === sessionId ? { ...sess, status: "connecting" as const, errorMessage: undefined } : sess,
+        ),
+      }));
+      try {
+        await serialConnect(session.serialConfig);
+        set((s) => ({
+          sessions: s.sessions.map((sess) =>
+            sess.id === sessionId ? { ...sess, status: "connected" as const } : sess,
+          ),
+        }));
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        set((s) => ({
+          sessions: s.sessions.map((sess) =>
+            sess.id === sessionId ? { ...sess, status: "error" as const, errorMessage: msg } : sess,
+          ),
+        }));
+      }
+      return;
+    }
+    if (session.type === "serial") return; // no config, can't reconnect
 
     const connection = useConnectionStore.getState().connections.find((c) => c.id === session.connectionId);
     if (!connection) {
