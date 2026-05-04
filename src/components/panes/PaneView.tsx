@@ -42,7 +42,7 @@ export function PaneView({ node }: { node: PaneNode }) {
       className={`relative flex flex-col flex-1 min-h-0 min-w-0 bg-[var(--t-bg-terminal)] ${hiddenByMaximize ? "hidden" : ""}`}
       style={{
         border: active
-          ? "2px solid var(--t-accent)"
+          ? "1px solid var(--t-accent)"
           : broadcastActive
             ? "2px dotted var(--t-accent)"
             : "2px solid transparent",
@@ -56,7 +56,7 @@ export function PaneView({ node }: { node: PaneNode }) {
       <div className="relative flex-1 min-h-0 min-w-0 overflow-hidden">
         <PaneTerminal session={session} active={active} />
       </div>
-      <DropZones paneId={node.id} />
+      <DropZones target={{ type: "pane", paneId: node.id }} />
     </div>
   );
 }

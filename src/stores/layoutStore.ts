@@ -29,6 +29,7 @@ interface LayoutStore {
 
   openSplitTab(sessionId?: string): void;
   setSplitTabActive(active: boolean): void;
+  createSplitTab(targetSessionId: string, incomingSessionId: string, position: SplitPosition): void;
   splitPane(targetPaneId: string, sessionId: string, position: SplitPosition): void;
   movePane(sourcePaneId: string, targetPaneId: string, position: SplitPosition): void;
   closePane(paneId: string): void;
@@ -164,6 +165,21 @@ export const useLayoutStore = create<LayoutStore>((set) => ({
 
   setSplitTabActive: (active) => set({ splitTabActive: active }),
 
+  createSplitTab: (targetSessionId, incomingSessionId, position) => {
+    set((state) => {
+      if (targetSessionId === incomingSessionId) return {};
+      const target: LeafNode = { type: "leaf", id: newPaneId(), sessionId: targetSessionId };
+      const incoming: LeafNode = { type: "leaf", id: newPaneId(), sessionId: incomingSessionId };
+      return {
+        root: splitLeaf(target, incoming, position),
+        activePaneId: incoming.id,
+        maximizedPaneId: null,
+        broadcastActive: state.broadcastActive,
+        splitTabActive: true,
+      };
+    });
+  },
+
   splitPane: (targetPaneId, sessionId, position) => {
     set((state) => {
       if (!state.root) {
@@ -204,12 +220,22 @@ export const useLayoutStore = create<LayoutStore>((set) => ({
     set((state) => {
       if (!state.root) return {};
       const { root } = removeLeaf(state.root, paneId);
+      if (root?.type === "leaf") {
+        return {
+          root: null,
+          activePaneId: null,
+          maximizedPaneId: null,
+          broadcastActive: false,
+          splitTabActive: false,
+        };
+      }
       const nextActive = findLeaf(root, state.activePaneId) ?? firstLeaf(root);
       return {
         root,
         activePaneId: nextActive?.id ?? null,
         maximizedPaneId: state.maximizedPaneId === paneId ? null : state.maximizedPaneId,
         broadcastActive: root ? state.broadcastActive : false,
+        splitTabActive: root ? state.splitTabActive : false,
       };
     });
   },
@@ -218,6 +244,15 @@ export const useLayoutStore = create<LayoutStore>((set) => ({
     set((state) => {
       if (!state.root) return {};
       const root = removeSessionFromTree(state.root, sessionId);
+      if (root?.type === "leaf") {
+        return {
+          root: null,
+          activePaneId: null,
+          maximizedPaneId: null,
+          broadcastActive: false,
+          splitTabActive: false,
+        };
+      }
       const nextActive = findLeaf(root, state.activePaneId) ?? firstLeaf(root);
       const maximizedLeaf = findLeaf(root, state.maximizedPaneId);
       return {

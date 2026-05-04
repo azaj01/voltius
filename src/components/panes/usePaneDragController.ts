@@ -31,11 +31,23 @@ export function usePaneDragController() {
               severity: "info",
               duration: 2500,
             });
-          } else {
+          } else if (drag.dropTarget.type === "session" && drag.dropTarget.sessionId) {
+            layout.createSplitTab(drag.dropTarget.sessionId, drag.sessionId, drag.dropTarget.position);
+            useSessionStore.getState().setActive(drag.sessionId);
+          } else if (drag.dropTarget.type === "pane" && drag.dropTarget.paneId) {
             layout.splitPane(drag.dropTarget.paneId, drag.sessionId, drag.dropTarget.position);
             useSessionStore.getState().setActive(drag.sessionId);
+          } else {
+            useNotificationStore.getState().addToast({
+              pluginId: "core",
+              pluginName: "Voltius",
+              type: "toast",
+              message: "Drop onto the active terminal or a split pane to create a split.",
+              severity: "info",
+              duration: 2500,
+            });
           }
-        } else if (drag.dragType === "pane" && drag.sourcePaneId) {
+        } else if (drag.dragType === "pane" && drag.sourcePaneId && drag.dropTarget.type === "pane" && drag.dropTarget.paneId) {
           layout.movePane(drag.sourcePaneId, drag.dropTarget.paneId, drag.dropTarget.position);
           useSessionStore.getState().setActive(drag.sessionId);
         }

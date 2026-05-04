@@ -18,7 +18,7 @@ import { useSubscriptionStore } from "@/stores/subscriptionStore";
 import { usePluginRegistryStore } from "@/stores/pluginRegistryStore";
 import { SyncDropdown } from "@/components/layout/SyncDropdown";
 import { useDragStore } from "@/stores/dragStore";
-import { useLayoutStore } from "@/stores/layoutStore";
+import { findLeaf, firstLeaf, getPaneSessionIds, useLayoutStore } from "@/stores/layoutStore";
 import { shouldSuppressDragClick } from "@/components/panes/usePaneDragController";
 
 const appWindow = getCurrentWindow();
@@ -35,8 +35,8 @@ export default function TitleBar() {
   const { sessions, activeSessionId, setActive, disconnect, removeSession } = useSessionStore();
   const connections = useConnectionStore((s) => s.connections);
   const splitRoot = useLayoutStore((s) => s.root);
+  const activePaneId = useLayoutStore((s) => s.activePaneId);
   const splitTabActive = useLayoutStore((s) => s.splitTabActive);
-  const openSplitTab = useLayoutStore((s) => s.openSplitTab);
   const setSplitTabActive = useLayoutStore((s) => s.setSplitTabActive);
 
   usePfToastBridge();
@@ -78,6 +78,11 @@ export default function TitleBar() {
   const isActiveSessionEnded = activeSessionId ? !!mpConnections[activeSessionId]?.ended : false;
 
   const isSftpCompact = !sftpPanelOpen && sessions.length > 0;
+  const splitSessionIds = splitRoot ? getPaneSessionIds(splitRoot) : [];
+  const splitSessionIdSet = new Set(splitSessionIds);
+  const visibleSessions = sessions.filter((session) => !splitSessionIdSet.has(session.id));
+  const activeSplitLeaf = findLeaf(splitRoot, activePaneId) ?? firstLeaf(splitRoot);
+  const activeSplitSession = activeSplitLeaf ? sessions.find((session) => session.id === activeSplitLeaf.sessionId) : null;
 
   const handleTabClick = (sessionId: string) => {
     if (shouldSuppressDragClick()) return;
@@ -87,10 +92,8 @@ export default function TitleBar() {
     setActiveNav("terminal" as any);
   };
 
-  const handleTabClose = (e: React.MouseEvent, sessionId: string) => {
-    e.stopPropagation();
+  const closeSessionById = (sessionId: string) => {
     const session = sessions.find((s) => s.id === sessionId);
-    // Clean up any active multiplayer connection first
     const mpConn = useTeamSessionStore.getState().connections[sessionId];
     if (mpConn) {
       if (mpConn.role === "host") {
@@ -106,8 +109,29 @@ export default function TitleBar() {
     } else {
       removeSession(sessionId);
     }
+  };
+
+  const handleTabClose = (e: React.MouseEvent, sessionId: string) => {
+    e.stopPropagation();
+    closeSessionById(sessionId);
     useLayoutStore.getState().removeSession(sessionId);
     if (sessions.length <= 1) setActiveNav("hosts");
+  };
+
+  const handleUnifiedTabClick = () => {
+    setSftpPanelOpen(false);
+    setSplitTabActive(true);
+    const leaf = findLeaf(useLayoutStore.getState().root, useLayoutStore.getState().activePaneId) ?? firstLeaf(useLayoutStore.getState().root);
+    if (leaf) setActive(leaf.sessionId);
+    setActiveNav("terminal" as any);
+  };
+
+  const handleUnifiedTabClose = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const ids = getPaneSessionIds(useLayoutStore.getState().root);
+    ids.forEach(closeSessionById);
+    useLayoutStore.setState({ root: null, activePaneId: null, maximizedPaneId: null, broadcastActive: false, splitTabActive: false });
+    if (sessions.length <= ids.length) setActiveNav("hosts");
   };
 
   const handleDragRegionMouseDown = (e: React.MouseEvent) => {
@@ -191,15 +215,11 @@ export default function TitleBar() {
 
         {/* Scrollable session tabs */}
         <div className="flex items-center gap-1.5 overflow-x-auto flex-1 h-full min-w-0">
-        {(sessions.length > 0 || splitRoot) && (
+        {splitRoot && (
           <button
-            onClick={() => {
-              setSftpPanelOpen(false);
-              openSplitTab(splitRoot ? undefined : activeSessionId ?? sessions[0]?.id);
-              setActiveNav("terminal" as any);
-            }}
-            className="flex items-center justify-center size-9 rounded-xl shrink-0 transition-all"
-            title="Split panes"
+            onClick={handleUnifiedTabClick}
+            className="group relative flex items-center gap-2 h-9 px-2 rounded-xl text-base font-medium-bold shrink-0 transition-all"
+            title="Unified split tab"
             style={{
               background: splitTabActive && activeNav === ("terminal" as any) && !sftpPanelOpen ? "var(--t-tab-active-bg)" : "var(--t-tab-bg)",
               color: splitTabActive && activeNav === ("terminal" as any) && !sftpPanelOpen ? "var(--t-tab-active-text)" : "var(--t-text-secondary)",
@@ -207,9 +227,19 @@ export default function TitleBar() {
             }}
           >
             <Icon icon="lucide:panel-top-open" width={18} />
+            <span className="max-w-[140px] truncate">
+              {activeSplitSession?.connectionName ?? "Split"}{splitSessionIds.length > 1 ? ` + ${splitSessionIds.length - 1}` : ""}
+            </span>
+            <span
+              onClick={handleUnifiedTabClose}
+              className="ml-0.5 opacity-0 group-hover:opacity-100 transition-opacity rounded p-0.5"
+              style={{ color: splitTabActive ? "var(--t-tab-active-text)" : "var(--t-text-muted)" }}
+            >
+              <span className="[&_path]:[stroke-width:2.1]"><Icon icon="lucide:x" width={20} /></span>
+            </span>
           </button>
         )}
-        {sessions.map((session) => {
+        {visibleSessions.map((session) => {
           const isActive = session.id === activeSessionId && activeNav === ("terminal" as any) && !sftpPanelOpen && !splitTabActive;
           const statusColor =
             session.status === "connected"  ? "var(--t-status-connected)" :

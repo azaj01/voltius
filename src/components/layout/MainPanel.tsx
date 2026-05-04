@@ -31,6 +31,7 @@ import { useHostPingPolling } from "@/hooks/useHostPingPolling";
 import { EmptySplitPane } from "@/components/panes/PaneTerminal";
 import { PaneView } from "@/components/panes/PaneView";
 import { usePaneDragController } from "@/components/panes/usePaneDragController";
+import { DropZones } from "@/components/panes/DropZones";
 import { useLayoutStore } from "@/stores/layoutStore";
 
 function NoVaultSelected() {
@@ -392,6 +393,9 @@ export default function MainPanel() {
                           }
                         }}
                       />
+                    )}
+                    {session.id === activeSessionId && !overlayContent && (
+                      <DropZones target={{ type: "session", sessionId: session.id }} />
                     )}
                   </div>
                 ))

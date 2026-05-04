@@ -4,7 +4,9 @@ import type { SplitPosition } from "@/stores/layoutStore";
 export type DragType = "tab" | "pane";
 
 interface DropTarget {
-  paneId: string;
+  type: "pane" | "session";
+  paneId?: string;
+  sessionId?: string;
   position: SplitPosition;
 }
 
