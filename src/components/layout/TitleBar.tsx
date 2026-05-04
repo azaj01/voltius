@@ -26,7 +26,6 @@ export default function TitleBar() {
   const rightPanelOpen = useUIStore((s) => s.rightPanelOpen);
   const setRightPanelOpen = useUIStore((s) => s.setRightPanelOpen);
   const toggleRightPanel = useUIStore((s) => s.toggleRightPanel);
-  const openSettings = useUIStore((s) => s.openSettings);
   const sftpPanelOpen = useUIStore((s) => s.sftpPanelOpen);
   const setSftpPanelOpen = useUIStore((s) => s.setSftpPanelOpen);
   const activeThemeName = useThemeStore((s) => s.getActiveTheme().name);
@@ -64,6 +63,7 @@ export default function TitleBar() {
   const shareButtonRef = useRef<HTMLButtonElement>(null);
   const accountMode = useSubscriptionStore((s) => s.accountMode);
   const tier = useSubscriptionStore((s) => s.tier);
+  const openSettings = useUIStore((s) => s.openSettings);
 
   const activeSession = sessions.find((s) => s.id === activeSessionId);
   const isActiveSessionMultiplayer = activeSession?.type === "multiplayer";
@@ -112,16 +112,9 @@ export default function TitleBar() {
       onMouseDown={handleDragRegionMouseDown}
       className="flex items-center h-[4.133rem] shrink-0 select-none bg-[var(--t-bg-terminal)]"
     >
-      {/* Hamburger menu */}
-      <div className="flex items-center pl-2 pr-1 shrink-0">
-        <TitleBarBtn onClick={undefined} title="Menu">
-          <Icon icon="lucide:menu" width={22} />
-        </TitleBarBtn>
-      </div>
-
       {/* Tabs row */}
       <div
-        className="flex items-center flex-1 h-full gap-1.5 px-1 overflow-x-auto"
+        className="flex items-center flex-1 h-full gap-1.5 px-1 min-w-0"
       >
         {/* Vaults button */}
         <button
@@ -186,7 +179,8 @@ export default function TitleBar() {
           <div className="shrink-0 w-px h-[1.667rem] bg-[var(--t-bg-card-hover)]" />
         )}
 
-        {/* Session tabs */}
+        {/* Scrollable session tabs */}
+        <div className="flex items-center gap-1.5 overflow-x-auto flex-1 h-full min-w-0">
         {sessions.map((session) => {
           const isActive = session.id === activeSessionId && activeNav === ("terminal" as any) && !sftpPanelOpen;
           const statusColor =
@@ -268,6 +262,7 @@ export default function TitleBar() {
             setActiveNav("hosts");
           }}
         />
+        </div>
       </div>
 
       {accountMode === "server" && <SubscriptionBadge />}
@@ -362,14 +357,7 @@ export default function TitleBar() {
               }
             }}
           >
-            <Icon
-              icon={
-                isActiveSessionSharing                       ? "lucide:radio" :
-                accountMode === "server" && tier === "free"  ? "lucide:lock" :
-                                                               "lucide:share-2"
-              }
-              width={13}
-            />
+            <Icon icon="lucide:radio" width={13} />
             {isActiveSessionSharing ? "Sharing" : "Share"}
           </button>
           {activeSessionId && (

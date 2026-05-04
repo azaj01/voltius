@@ -170,7 +170,7 @@ export function ShareMenu({ anchorRef, open, onClose, activeSessionId, connectio
         /* ── Unauthenticated view ── */
         <div className="px-4 py-4 flex flex-col items-center text-center gap-3">
           <div className="flex items-center justify-center size-9 rounded-full" style={{ background: "color-mix(in srgb, var(--t-accent) 12%, transparent)" }}>
-            <Icon icon="lucide:share-2" width={16} style={{ color: "var(--t-accent)" }} />
+            <Icon icon="lucide:radio" width={16} style={{ color: "var(--t-accent)" }} />
           </div>
           <div>
             <p className="text-xs font-semibold mb-1" style={{ color: "var(--t-text-primary)" }}>

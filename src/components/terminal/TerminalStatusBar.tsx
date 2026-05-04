@@ -39,7 +39,7 @@ function latencyColor(ms: number): string {
 function cpuColor(pct: number): string {
   if (pct > 80) return "var(--t-status-error)";
   if (pct > 60) return "var(--t-status-warning)";
-  return "var(--t-text-muted)";
+  return "var(--t-text-dim)";
 }
 
 function fmtMem(kb: number): string {
@@ -507,7 +507,7 @@ export function TerminalStatusBar({ sessionId, sessionType, connectionId, serial
                     <Icon
                       icon={distroIcon}
                       width={12}
-                      style={{ flexShrink: 0, color: "var(--t-text-muted)", cursor: "pointer" }}
+                      style={{ flexShrink: 0, color: "var(--t-text-dim)", cursor: "pointer" }}
                       onClick={() => {
                         const text = systemInfo
                           ? `${systemInfo.pretty_name || prettifyDistro(connection.distro!)}${systemInfo.kernel ? ` · ${systemInfo.kernel} ${systemInfo.arch}` : ""}`
@@ -562,7 +562,7 @@ export function TerminalStatusBar({ sessionId, sessionType, connectionId, serial
                 <span
                   title={`${connection.username}@${connection.host}`}
                   onClick={handleCopyHost}
-                  className={`flex items-center px-1 text-[var(--t-text-muted)] ${statusBarItemClass}`}
+                  className={`flex items-center px-1 text-[var(--t-text-dim)] ${statusBarItemClass}`}
                   style={{
                     maxWidth: 160,
                     overflow: "hidden",
@@ -588,11 +588,11 @@ export function TerminalStatusBar({ sessionId, sessionType, connectionId, serial
           )}
           {sessionType === "serial" && (
             <>
-              <Icon icon="lucide:plug-2" width={11} className="text-[var(--t-text-muted)]" />
+              <Icon icon="lucide:plug-2" width={11} className="text-[var(--t-text-dim)]" />
               <span
                 title={serialConfig ? `${serialConfig.port} · ${serialConfig.baud} baud` : "serial"}
                 onClick={handleCopyHost}
-                className={`flex items-center px-1 text-[var(--t-text-muted)] ${statusBarItemClass}`}
+                className={`flex items-center px-1 text-[var(--t-text-dim)] ${statusBarItemClass}`}
                 style={{
                   maxWidth: 160,
                   overflow: "hidden",
@@ -637,7 +637,7 @@ export function TerminalStatusBar({ sessionId, sessionType, connectionId, serial
               onClick={() => toggleRightPanel("plugin:monitoring")}
               className={`flex items-center gap-1.5 px-1.5 ${statusBarItemClass}`}
               style={{
-                color: "var(--t-text-muted)",
+                color: "var(--t-text-dim)",
                 background: metricsIsActive ? "var(--t-bg-elevated)" : undefined,
               }}
               title="System metrics"
@@ -672,7 +672,7 @@ export function TerminalStatusBar({ sessionId, sessionType, connectionId, serial
               onClick={() => toggleRightPanel("ports")}
               className={`flex items-center gap-1 px-1.5 ${statusBarItemClass}`}
               style={{
-                color: activeTunnelCount > 0 ? "var(--t-text-primary)" : "var(--t-text-muted)",
+                color: "var(--t-text-dim)",
                 background: portsIsActive
                   ? "var(--t-bg-elevated)"
                   : pulse
@@ -682,7 +682,7 @@ export function TerminalStatusBar({ sessionId, sessionType, connectionId, serial
               title={`${activeTunnelCount} active tunnel${activeTunnelCount !== 1 ? "s" : ""}`}
             >
               <Icon icon="lucide:network" width={11} />
-              <span>{activeTunnelCount > 0 ? `${activeTunnelCount} ${activeTunnelCount === 1 ? "port" : "ports"}` : "ports"}</span>
+              {activeTunnelCount > 0 && <span>{activeTunnelCount}</span>}
             </button>
           )}
         </div>
