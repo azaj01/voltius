@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useLayoutStore, type SplitDirection } from "@/stores/layoutStore";
 
 export function ResizeHandle({
@@ -12,11 +12,13 @@ export function ResizeHandle({
 }) {
   const setRatio = useLayoutStore((s) => s.setRatio);
   const draggingRef = useRef(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const onMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     draggingRef.current = true;
+    setIsDragging(true);
 
     const onMove = (move: MouseEvent) => {
       if (!draggingRef.current || !containerRef.current) return;
@@ -29,6 +31,7 @@ export function ResizeHandle({
 
     const onUp = () => {
       draggingRef.current = false;
+      setIsDragging(false);
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseup", onUp);
     };
@@ -40,11 +43,16 @@ export function ResizeHandle({
   return (
     <div
       onMouseDown={onMouseDown}
-      className={direction === "h" ? "w-1 cursor-col-resize flex items-center justify-center" : "h-1 cursor-row-resize flex items-center justify-center"}
+      role="separator"
+      aria-orientation={direction === "h" ? "vertical" : "horizontal"}
+      tabIndex={0}
+      className={direction === "h"
+        ? "group w-2 -mx-0.5 cursor-col-resize flex items-center justify-center focus:outline-none"
+        : "group h-2 -my-0.5 cursor-row-resize flex items-center justify-center focus:outline-none"}
     >
       <div
-        className={direction === "h" ? "w-1.5 h-10 rounded-full" : "h-1.5 w-10 rounded-full"}
-        style={{ background: "var(--t-accent)" }}
+        className={`${direction === "h" ? "w-0.5 h-8" : "h-0.5 w-8"} rounded-full opacity-0 transition-[opacity,background-color] duration-150 group-hover:opacity-100 group-focus-visible:opacity-100 ${isDragging ? "opacity-100" : ""}`}
+        style={{ background: isDragging ? "var(--t-accent)" : "color-mix(in srgb, var(--t-text-dim) 45%, transparent)" }}
       />
     </div>
   );
