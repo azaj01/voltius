@@ -588,7 +588,7 @@ export function TerminalStatusBar({ sessionId, sessionType, connectionId, serial
           )}
           {sessionType === "serial" && (
             <>
-              <Icon icon="lucide:plug-2" width={11} className="text-[var(--t-text-dim)]" />
+              <Icon icon="lucide:ethernet-port" width={11} className="text-[var(--t-text-dim)]" />
               <span
                 title={serialConfig ? `${serialConfig.port} · ${serialConfig.baud} baud` : "serial"}
                 onClick={handleCopyHost}

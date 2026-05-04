@@ -229,7 +229,7 @@ function SessionConnectionOverlay({
         errorMessage={session.errorMessage}
         name={session.connectionName}
         subtitle={subtitle}
-        icon="lucide:plug-2"
+        icon="lucide:ethernet-port"
         steps={SERIAL_STEPS}
         stepEventName={`serial-step-${session.id}`}
         conflictEventName=""
