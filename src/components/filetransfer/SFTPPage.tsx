@@ -20,9 +20,14 @@ import { SidePane } from "./SidePane";
 import { ConflictDialog } from "./ConflictDialog";
 import { TransferQueue } from "./TransferQueue";
 import { useSessionStore } from "@/stores/sessionStore";
+import { useUIStore } from "@/stores/uiStore";
+import { useConnectionStore } from "@/stores/connectionStore";
 
 export default function SFTPPage() {
   const tarTransferEnabled = useSftpSettingsStore((s) => s.tarTransferEnabled);
+  const sftpPanelOpen = useUIStore((s) => s.sftpPanelOpen);
+  const pendingSftpConnectionId = useUIStore((s) => s.pendingSftpConnectionId);
+  const clearPendingSftpConnection = useUIStore((s) => s.clearPendingSftpConnection);
   const [leftHost, setLeftHost] = useState<HostChoice | null>(null);
   const [leftPhase, setLeftPhase] = useState<SidePhase>({ tag: "picking" });
   const [leftRefresh, setLeftRefresh] = useState(0);
@@ -65,6 +70,17 @@ export default function SFTPPage() {
       setPhase({ tag: "error", message: String(e), host });
     }
   }, []);
+
+  useEffect(() => {
+    if (!sftpPanelOpen || !pendingSftpConnectionId) return;
+    const { connections, teamConnections } = useConnectionStore.getState();
+    const conn = [...connections, ...Object.values(teamConnections).flat()].find((c) => c.id === pendingSftpConnectionId);
+    if (!conn) return;
+    clearPendingSftpConnection();
+    const host: HostChoice = { kind: "remote", connection: conn };
+    setLeftHost(host);
+    connectSide(host, setLeftPhase);
+  }, [sftpPanelOpen, pendingSftpConnectionId, clearPendingSftpConnection, connectSide]);
 
   const disconnectSide = useCallback((setPhase: React.Dispatch<React.SetStateAction<SidePhase>>, currentPhase: SidePhase) => {
     if (currentPhase.tag === "connected" && currentPhase.sftpId) {

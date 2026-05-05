@@ -18,6 +18,8 @@ interface BaseCardProps {
   draggable?: boolean;
   onDragStart?: (e: React.DragEvent<HTMLDivElement>) => void;
   onDragEnd?: (e: React.DragEvent<HTMLDivElement>) => void;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
   "data-card"?: boolean | string;
   "data-host-card"?: string;
   "data-connection-id"?: string;
@@ -40,6 +42,8 @@ export const BaseCard = memo(function BaseCard({
   draggable,
   onDragStart,
   onDragEnd,
+  onMouseEnter,
+  onMouseLeave,
   "data-card": dataCard,
   "data-host-card": dataHostCard,
   "data-connection-id": dataConnectionId,
@@ -48,15 +52,9 @@ export const BaseCard = memo(function BaseCard({
   const { pos, open, close } = useContextMenu();
   const activeMenuItems = isSelected && bulkContextMenuItems?.length ? bulkContextMenuItems : contextMenuItems;
 
-  const activeBorderColor = isEditing
-    ? "var(--t-accent)"
-    : isSelected
-    ? "var(--t-accent)"
-    : "transparent";
-
-  const focusBoxShadow = isFocused && !isSelected && !isEditing
-    ? "inset 0 0 0 2px var(--t-accent)"
-    : "none";
+  const activeBorderColor = isEditing || isSelected ? "var(--t-accent)" : "transparent";
+  const focusBoxShadow = isFocused && !isSelected && !isEditing ? "inset 0 0 0 2px var(--t-accent)" : "none";
+  const showOverlay = isEditing || isSelected || isFocused;
 
   return (
     <>
@@ -65,8 +63,8 @@ export const BaseCard = memo(function BaseCard({
         data-host-card={dataHostCard}
         data-connection-id={dataConnectionId}
         data-selectable-id={dataSelectableId}
-        className={`group flex items-center px-4 rounded-2xl cursor-pointer transition-all duration-150 bg-[var(--t-bg-card)] ${isList ? "gap-3 py-2" : "gap-4 py-4"} ${className}`}
-        style={{ border: `2px solid ${activeBorderColor}`, boxShadow: focusBoxShadow, ...style }}
+        className={`group relative flex items-center px-3 rounded-2xl cursor-pointer transition-all duration-150 bg-[var(--t-bg-card)] ${isList ? "gap-3 py-2" : "gap-4 py-3"} ${className}`}
+        style={{ border: "2px solid transparent", ...style }}
         draggable={draggable}
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
@@ -76,13 +74,21 @@ export const BaseCard = memo(function BaseCard({
         onMouseEnter={(e) => {
           e.currentTarget.style.background = "var(--t-bg-card-hover)";
           if (!isActive && !isSelected && !isEditing) e.currentTarget.style.borderColor = "var(--t-border-hover)";
+          onMouseEnter?.();
         }}
         onMouseLeave={(e) => {
           e.currentTarget.style.background = "var(--t-bg-card)";
-          e.currentTarget.style.borderColor = activeBorderColor;
+          e.currentTarget.style.borderColor = "transparent";
+          onMouseLeave?.();
         }}
       >
         {children}
+        {showOverlay && (
+          <div
+            className="absolute inset-[-2px] rounded-2xl border-2 pointer-events-none"
+            style={{ borderColor: activeBorderColor, boxShadow: focusBoxShadow }}
+          />
+        )}
       </div>
 
       {pos && !!activeMenuItems?.length && (

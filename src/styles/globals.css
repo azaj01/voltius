@@ -16,6 +16,11 @@
   animation-duration: 5000ms;
 }
 
+.animate-ping {
+  animation: ping-slow 2s ease-out infinite;
+  animation-duration: 2000ms;
+}
+
 @keyframes statusbar-connecting-pulse {
   0%, 100% { opacity: 0.5; }
   50% { opacity: 1; }
@@ -118,6 +123,19 @@ input::-webkit-inner-spin-button {
 @keyframes ripple-exit-anim {
   from { opacity: 1; }
   to   { opacity: 0; }
+}
+
+@keyframes cursor-blink {
+  50% { opacity: 0; }
+}
+
+.cursor-blink-char {
+  animation: cursor-blink 1s step-end infinite;
+  animation-play-state: paused;
+}
+
+.terminal-connect-btn:hover .cursor-blink-char {
+  animation-play-state: running;
 }
 
 .xterm-decoration-overview-ruler {

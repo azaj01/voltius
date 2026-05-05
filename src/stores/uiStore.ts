@@ -67,6 +67,7 @@ interface UIStore {
   rightPanelOpen: boolean;
   rightPanelSection: RightPanelSection;
   sftpPanelOpen: boolean;
+  pendingSftpConnectionId: string | null;
   uiScale: number;
   homeLayoutMode: LayoutMode;
   homeSortMode: SortMode;
@@ -102,6 +103,8 @@ interface UIStore {
   setRightPanelSection: (section: RightPanelSection) => void;
   toggleRightPanel: (section?: RightPanelSection) => void;
   setSftpPanelOpen: (open: boolean) => void;
+  openSftpWith: (connectionId: string) => void;
+  clearPendingSftpConnection: () => void;
   setUiScale: (value: number) => void;
   setHomeLayoutMode: (v: LayoutMode) => void;
   setHomeSortMode: (v: SortMode) => void;
@@ -133,6 +136,7 @@ export const useUIStore = create<UIStore>()(
       rightPanelOpen: false,
       rightPanelSection: "themes" as RightPanelSection,
       sftpPanelOpen: false,
+      pendingSftpConnectionId: null as string | null,
       uiScale: 1,
       homeLayoutMode: "grid" as LayoutMode,
       homeSortMode: "newest" as SortMode,
@@ -173,6 +177,8 @@ export const useUIStore = create<UIStore>()(
           rightPanelSection: section ?? s.rightPanelSection,
         })),
       setSftpPanelOpen: (open) => set({ sftpPanelOpen: open }),
+      openSftpWith: (connectionId) => set({ sftpPanelOpen: true, pendingSftpConnectionId: connectionId }),
+      clearPendingSftpConnection: () => set({ pendingSftpConnectionId: null }),
       setUiScale: (value) => { set({ uiScale: clampUiScale(value), prefsUpdatedAt: new Date().toISOString() }); import("@/services/sync").then((m) => m.scheduleSync()).catch(() => {}); },
       setHomeLayoutMode: (v) => { set({ homeLayoutMode: v, prefsUpdatedAt: new Date().toISOString() }); import("@/services/sync").then((m) => m.scheduleSync()).catch(() => {}); },
       setHomeSortMode: (v) => { set({ homeSortMode: v, prefsUpdatedAt: new Date().toISOString() }); import("@/services/sync").then((m) => m.scheduleSync()).catch(() => {}); },

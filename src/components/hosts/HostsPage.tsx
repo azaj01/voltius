@@ -27,6 +27,8 @@ import { usePermissions } from "@/hooks/usePermission";
 import { useAccessibleVaultIds } from "@/hooks/useAccessibleVaultIds";
 import { useDefaultVaultId } from "@/hooks/useWritableVaultIds";
 import { FolderCard } from "@/components/folders/FolderCard";
+
+const HOST_GRID_COLS = "repeat(auto-fill, minmax(18rem, 1fr))";
 import { FolderEditPanel } from "@/components/folders/FolderEditPanel";
 import HostCard from "./HostCard";
 import ConnectionForm, { type ConnectionFormHandle } from "@/components/connections/ConnectionForm";
@@ -831,7 +833,7 @@ export default function HostsPage() {
                   <div
                     data-drag-surface="true"
                     className={layoutMode === "grid" ? "grid gap-3" : "flex flex-col gap-1.5"}
-                    style={layoutMode === "grid" ? { gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))" } : undefined}
+                    style={layoutMode === "grid" ? { gridTemplateColumns: HOST_GRID_COLS } : undefined}
                   >
                     {visibleFolders.map((folder) => {
                       const canEditFolder = can("EDIT_FOLDERS", folder.vault_id ?? "personal");
@@ -896,7 +898,7 @@ export default function HostsPage() {
                   <p className="text-xs font-bold uppercase tracking-widest mb-3 text-[var(--t-text-dim)]">Pinned</p>
                   <div
                     className={layoutMode === "grid" ? "grid gap-3" : "flex flex-col gap-1.5"}
-                    style={layoutMode === "grid" ? { gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))" } : undefined}
+                    style={layoutMode === "grid" ? { gridTemplateColumns: HOST_GRID_COLS } : undefined}
                   >
                     {pinnedHosts.map((conn) => {
                       const connVaultId = conn.vault_id ?? "personal";
@@ -966,7 +968,7 @@ export default function HostsPage() {
                   <div
                     data-drag-surface="true"
                     className={layoutMode === "grid" ? "grid gap-3" : "flex flex-col gap-1.5"}
-                    style={layoutMode === "grid" ? { gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))" } : undefined}
+                    style={layoutMode === "grid" ? { gridTemplateColumns: HOST_GRID_COLS } : undefined}
                   >
                     {(showForm || showSerialForm) && !editing && <DraftHostCard layout={layoutMode} serial={showSerialForm} />}
                     {filtered.map((conn) => {

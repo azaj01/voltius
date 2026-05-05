@@ -10,6 +10,7 @@ import { useSyncPrefsStore } from "@/stores/syncPrefsStore";
 import { buildConnectionMenuItems } from "@/utils/connectionMenuItems";
 import { useConnectionStore } from "@/stores/connectionStore";
 import { useHostPingStore } from "@/stores/hostPingStore";
+import { useUIStore } from "@/stores/uiStore";
 
 interface Props {
   connection: Connection;
@@ -60,6 +61,7 @@ export default function HostCard({
 
   const contextMenuItems: ContextMenuItem[] = [
     ...(canEdit ? [{ label: "Edit", icon: "lucide:pencil", onClick: () => onEdit(connection), shortcut: "E" }] : []),
+    ...(!isSerial ? [{ label: "Open in SFTP", icon: "lucide:folder-open", onClick: () => useUIStore.getState().openSftpWith(connection.id) }] : []),
     ...buildConnectionMenuItems({
       canEdit,
       contributions,
@@ -84,6 +86,18 @@ export default function HostCard({
     }),
   ];
 
+  const pingColor = pingStatus === "up"
+    ? "var(--t-status-connected)"
+    : pingStatus === "down"
+    ? "var(--t-status-error)"
+    : "var(--t-text-dim)";
+
+  const syncIcon = !isSynced && (
+    <span title="Cloud sync disabled" className="text-[var(--t-text-dim)] flex items-center">
+      <Icon icon="lucide:cloud-off" width={18} />
+    </span>
+  );
+
   return (
     <BaseCard
       data-host-card="true"
@@ -97,29 +111,21 @@ export default function HostCard({
       draggable={!!onDragStart}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
+      onMouseEnter={showPingDot ? () => useHostPingStore.getState().addPriorityConnection(connection.id) : undefined}
+      onMouseLeave={showPingDot ? () => useHostPingStore.getState().removePriorityConnection(connection.id) : undefined}
       onClick={(e) => onSelect?.(connection.id, e)}
       onDoubleClick={() => onConnect(connection)}
       bulkContextMenuItems={bulkContextMenuItems}
       contextMenuItems={contextMenuItems}
     >
-      <div className="relative shrink-0">
-        <ConnectionAvatar connection={connection} size={isList ? 28 : 48} />
-        {showPingDot && (
-          <StatusDot
-            color={
-              pingStatus === "up"
-                ? "var(--t-status-connected)"
-                : pingStatus === "down"
-                ? "var(--t-status-error)"
-                : "var(--t-text-dim)"
-            }
-            animate={pingStatus === "up"}
-          />
-        )}
-      </div>
-
       {isList ? (
         <>
+          <div className="relative shrink-0">
+            <ConnectionAvatar connection={connection} size={28} />
+            {showPingDot && (
+              <StatusDot color={pingColor} animate={pingStatus === "up"} fast={isActive} />
+            )}
+          </div>
           <p className="font-medium-bold truncate w-48 shrink-0 text-[var(--t-text-bright)]">
             {displayName(connection)}
           </p>
@@ -141,37 +147,100 @@ export default function HostCard({
               ))}
             </div>
           )}
+          <div className="flex items-center gap-1 shrink-0">
+            {syncIcon}
+            {canEdit && <CardActionButton icon="lucide:pencil" title="Edit" onClick={() => onEdit(connection)} />}
+            {canEdit && <CardActionButton icon="lucide:trash-2" title="Delete" onClick={() => onDelete(connection.id)} danger />}
+            {!isSerial && <CardActionButton icon="lucide:folder-open" title="Open in SFTP" onClick={() => useUIStore.getState().openSftpWith(connection.id)} />}
+            <button
+              onClick={(e) => { e.stopPropagation(); onConnect(connection); }}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors hover:text-[var(--t-tab-active-text)]"
+              title="Connect (or double-click)"
+            >
+              <Icon icon="lucide:terminal" width={18} />
+            </button>
+          </div>
         </>
       ) : (
-        <div className="flex-1 min-w-0">
-          <p className="text-base font-medium-bold truncate leading-tight text-[var(--t-text-bright)]">
-            {displayName(connection)}
-          </p>
-          <p className="text-xs mt-0.5 truncate text-[var(--t-text-secondary)]">
-            {isSerial
-              ? `serial · ${connection.serial_baud ?? 115200} baud`
-              : `ssh, ${connection.username}${showPingDot && pingStatus === "up" && pingLatency !== undefined ? ` · ${pingLatency}ms` : ""}`
-            }
-          </p>
-        </div>
-      )}
+        <>
+          <div className="shrink-0">
+            <ConnectionAvatar connection={connection} size={45} />
+          </div>
 
-      <div className="flex items-center gap-1 shrink-0">
-        {!isSynced && (
-          <span title="Cloud sync disabled" className="text-[var(--t-text-dim)] flex items-center">
-            <Icon icon="lucide:cloud-off" width={18} />
-          </span>
-        )}
-        {canEdit && <CardActionButton icon="lucide:pencil" title="Edit" onClick={() => onEdit(connection)} />}
-        {canEdit && <CardActionButton icon="lucide:trash-2" title="Delete" onClick={() => onDelete(connection.id)} danger />}
-        <button
-          onClick={(e) => { e.stopPropagation(); onConnect(connection); }}
-          className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors hover:text-[var(--t-tab-active-text)]"
-          title="Connect (or double-click)"
-        >
-          <Icon icon="lucide:terminal" width={18} />
-        </button>
-      </div>
+          <div className="flex-1 min-w-0 self-stretch flex flex-col justify-between">
+            <div className="flex items-center gap-2 min-w-0">
+              <p className="text-sm font-bold truncate text-[var(--t-text-bright)]">
+                {displayName(connection)}
+              </p>
+              <span className="shrink-0 px-1.5 py-0.5 rounded-md text-[11px] font-semibold bg-[var(--t-bg-input)] text-[var(--t-text-dim)] border border-[var(--t-border)]">
+                {isSerial ? "SERIAL" : "SSH"}
+              </span>
+              {(showPingDot || syncIcon) && (
+                <div className="flex items-center gap-1.5 ml-auto shrink-0">
+                  {showPingDot && (
+                    <>
+                      <span className="relative w-2.5 h-2.5 shrink-0">
+                        <StatusDot color={pingColor} animate={pingStatus === "up"} fast={isActive} size={12} />
+                      </span>
+                      {pingStatus === "up" && pingLatency !== undefined && (
+                        <span className="text-xs font-medium" style={{ color: pingColor }}>
+                          {pingLatency} ms
+                        </span>
+                      )}
+                    </>
+                  )}
+                  {syncIcon}
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-end mt-2">
+              <div className="flex items-center gap-3 flex-1 pb-1">
+                {canEdit && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onDelete(connection.id); }}
+                    className="text-[var(--t-text-dim)] hover:text-[var(--t-status-error)] transition-colors flex items-center"
+                    title="Delete"
+                  >
+                    <Icon icon="lucide:trash-2" width={18} />
+                  </button>
+                )}
+                {canEdit && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onEdit(connection); }}
+                    className="text-[var(--t-text-dim)] hover:text-[var(--t-text-bright)] transition-colors flex items-center"
+                    title="Edit"
+                  >
+                    <Icon icon="lucide:square-pen" width={18} />
+                  </button>
+                )}
+                {!isSerial && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); useUIStore.getState().openSftpWith(connection.id); }}
+                    className="text-[var(--t-text-dim)] hover:text-[var(--t-text-bright)] transition-colors flex items-center"
+                    title="Open in SFTP"
+                  >
+                    <Icon icon="lucide:folder-open" width={18} />
+                  </button>
+                )}
+              </div>
+
+              {/* Terminal connect button — bleeds into card's bottom-right corner */}
+              <button
+                onClick={(e) => { e.stopPropagation(); onConnect(connection); }}
+                className="terminal-connect-btn -mr-[18px] -mb-[18px] pr-[18px] pb-[18px] pt-2 pl-3 rounded-tl-xl rounded-br-2xl bg-[var(--t-bg-terminal)] text-[var(--t-text-primary)] hover:text-[var(--t-terminal-foreground)] transition-colors text-xs whitespace-nowrap"
+                style={{ fontFamily: "var(--t-terminal-font-family)" }}
+                title="Connect (or double-click)"
+              >
+                {isSerial
+                  ? <>{connection.serial_port ?? "serial"} &gt;<span className="cursor-blink-char">_</span></>
+                  : <>{connection.username}@{connection.host} &gt;<span className="cursor-blink-char">_</span></>
+                }
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </BaseCard>
   );
 }

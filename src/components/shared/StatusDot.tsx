@@ -2,14 +2,15 @@ interface StatusDotProps {
   color: string;
   animate?: boolean;
   size?: number;
+  fast?: boolean;
 }
 
-export function StatusDot({ color, animate = false, size = 11 }: StatusDotProps) {
+export function StatusDot({ color, animate = false, size = 11, fast = false }: StatusDotProps) {
   return (
     <span className="absolute bottom-0 right-0">
       {animate && (
         <span
-          className="absolute inset-0 rounded-full animate-ping-slow"
+          className={`absolute inset-0 rounded-full group-hover:animate-ping ${fast ? "animate-ping" : "animate-ping-slow"}`}
           style={{ background: color }}
         />
       )}
