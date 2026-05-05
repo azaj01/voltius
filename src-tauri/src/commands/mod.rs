@@ -11,6 +11,7 @@ pub mod known_hosts;
 pub mod local;
 pub mod metrics;
 pub mod ping;
+pub mod processes;
 pub mod plugin_registry;
 pub mod plugin_storage;
 pub mod plugins;

@@ -12,6 +12,7 @@ import { manifest as sshConfigManifest, register as sshConfigRegister } from "./
 import { manifest as gistSyncManifest, register as gistSyncRegister } from "./gist-sync";
 import { manifest as monitoringManifest, register as monitoringRegister } from "./monitoring";
 import { manifest as dockerManifest, register as dockerRegister } from "./docker";
+import { manifest as processManagerManifest, register as processManagerRegister } from "./process-manager";
 
 export interface BundledPlugin {
   manifest: PluginManifest;
@@ -23,4 +24,5 @@ export const BUNDLED_PLUGINS: BundledPlugin[] = [
   { manifest: gistSyncManifest, register: gistSyncRegister },
   { manifest: monitoringManifest, register: monitoringRegister },
   { manifest: dockerManifest, register: dockerRegister },
+  { manifest: processManagerManifest, register: processManagerRegister },
 ];

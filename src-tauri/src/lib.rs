@@ -5,6 +5,7 @@ mod metrics;
 mod known_hosts;
 mod local;
 mod port_forward;
+mod processes;
 mod serial;
 mod sftp;
 mod ssh;
@@ -14,6 +15,7 @@ mod vault_auth;
 use docker::stream::DockerLogStreamManager;
 use known_hosts::{KnownHostsStore, PendingConflicts};
 use metrics::stream::MetricsStreamManager;
+use processes::stream::ProcessStreamManager;
 use port_forward::PortForwardManager;
 use serial::connect::SerialSessionManager;
 use std::sync::{Arc, Mutex};
@@ -215,6 +217,7 @@ pub fn run() {
         })
         .manage(DockerLogStreamManager::new())
         .manage(MetricsStreamManager::new())
+        .manage(ProcessStreamManager::new())
         .manage(SessionManager::new())
         .manage(LocalSessionManager::new())
         .manage(SecretsStore::new())
@@ -369,6 +372,9 @@ pub fn run() {
             commands::port_forwarding_tunnels::pf_tunnel_set_auto,
             commands::metrics::metrics_start,
             commands::metrics::metrics_stop,
+            commands::processes::processes_start,
+            commands::processes::processes_stop,
+            commands::processes::process_kill,
             commands::sysinfo::get_system_info,
             commands::sysinfo::get_connected_system_info,
             commands::docker::docker_list_containers,
